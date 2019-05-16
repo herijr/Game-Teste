@@ -1,4 +1,7 @@
 import pygame
+from os import path
+
+img_dir = path.join(path.dirname(__file__), 'img')
 
 LARGURA = 640
 ALTURA = 480
@@ -33,8 +36,8 @@ def vida_chefe(surf, x, y, pct):
 class Jogador(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface((50, 40))
-        self.image.fill(AZUL)
+        self.image = pygame.transform.scale(jogador_img, (38, 50))
+        self.image.set_colorkey(PRETO)
         self.rect = self.image.get_rect()
         self.rect.top = 10
         self.rect.left = 10
@@ -80,8 +83,8 @@ class Jogador(pygame.sprite.Sprite):
 class Chefe(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface((50, 40))
-        self.image.fill(AMARELO)
+        self.image = chefe_img
+        self.image.set_colorkey(PRETO)
         self.rect = self.image.get_rect()
         self.rect.centery = ALTURA / 2
         self.rect.right = LARGURA - 10
@@ -108,8 +111,8 @@ class Chefe(pygame.sprite.Sprite):
 class Tiro(pygame.sprite.Sprite):
     def __init__(self, y, x):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface((20, 10))
-        self.image.fill(VERDE)
+        self.image = tiro_img
+        self.image.set_colorkey(PRETO)
         self.rect = self.image.get_rect()
         self.rect.left =  x
         self.rect.centery = y
@@ -122,8 +125,8 @@ class Tiro(pygame.sprite.Sprite):
 class Tiroinimigo(pygame.sprite.Sprite):
     def __init__(self, y, x):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface((20, 10))
-        self.image.fill(VERMELHO)
+        self.image = tiroinimigo_img
+        self.image.set_colorkey(PRETO)
         self.rect = self.image.get_rect()
         self.rect.right =  x
         self.rect.centery = y
@@ -132,6 +135,14 @@ class Tiroinimigo(pygame.sprite.Sprite):
         self.rect.x += self.speedx
         if self.rect.right < 0:
             self.kill()
+
+# Carrega Imagens do jogo
+background = pygame.image.load(path.join(img_dir, "starfield.png")).convert()
+background_rect = background.get_rect()
+chefe_img = pygame.image.load(path.join(img_dir, "img_chefe.png")).convert()
+jogador_img = pygame.image.load(path.join(img_dir, "img_jogador.png")).convert()
+tiro_img = pygame.image.load(path.join(img_dir, "tiro.png")).convert()
+tiroinimigo_img = pygame.image.load(path.join(img_dir, "tiroinimigo.png")).convert()
 
 game_sprites = pygame.sprite.Group()
 tiros = pygame.sprite.Group()
@@ -160,7 +171,7 @@ while rodando:
     # se um tiro acerta o inimigo
     hits = pygame.sprite.groupcollide(tiros, chefes, True, False)
     for hit in hits:
-        chefe.vida -= 10
+        chefe.vida -= 5
         if chefe.vida <= 0:
             rodando = False
 
@@ -173,6 +184,8 @@ while rodando:
             
     # Render / Draw
     tela.fill(PRETO)
+    tela.blit(background, background_rect)
+
     game_sprites.draw(tela)
     vida_chefe(tela, 5, 5, chefe.vida)
     # flip display, apos renderizar itens
