@@ -10,6 +10,7 @@ AMARELO = (255, 255, 0)
 AZUL = (0, 0, 255)
 VERDE = (0, 255, 0)
 VERMELHO = (255, 0, 0)
+BRANCO = (255, 255, 255)
 
 # Inicializa o modulo pygame e cria a tela do jogo
 pygame.init()
@@ -17,6 +18,17 @@ pygame.mixer.init()
 tela = pygame.display.set_mode((LARGURA, ALTURA))
 pygame.display.set_caption("Meu jogo")
 clock = pygame.time.Clock()
+
+def vida_chefe(surf, x, y, pct):
+    if pct < 0:
+        pct = 0
+    COMPRIMENTO_BARRA = 200
+    ALTURA_BARRA = 10
+    nivel_vida = (pct * 0.01) * COMPRIMENTO_BARRA
+    linha_fora = pygame.Rect(x, y, COMPRIMENTO_BARRA, ALTURA_BARRA)
+    preench = pygame.Rect(x, y, nivel_vida, ALTURA_BARRA)
+    pygame.draw.rect(surf, VERMELHO, preench)
+    pygame.draw.rect(surf, BRANCO, linha_fora, 2)
 
 class Jogador(pygame.sprite.Sprite):
     def __init__(self):
@@ -27,23 +39,35 @@ class Jogador(pygame.sprite.Sprite):
         self.rect.top = 10
         self.rect.left = 10
         self.veloc_y = 0
+        self.veloc_x = 0
         self.tiro_intervalo = 250
+        self.vidas = 5
         self.ultimo_tiro = pygame.time.get_ticks()
 
     def update(self):
         self.veloc_y = 0
+        self.veloc_x = 0
         keystate = pygame.key.get_pressed()
         if keystate[pygame.K_UP]:
             self.veloc_y = -9
         if keystate[pygame.K_DOWN]:
             self.veloc_y = 9
-        if keystate[pygame.K_SPACE]:
+        if keystate[pygame.K_LEFT]:
+            self.veloc_x = -9
+        if keystate[pygame.K_RIGHT]:
+            self.veloc_x = 9
+        if keystate[pygame.K_SPACE]:            
             self.atirar()
         self.rect.y += self.veloc_y
-        if self.rect.top < 0:
-            self.rect.top = 0
+        self.rect.x += self.veloc_x
+        if self.rect.top < 25:
+            self.rect.top = 25
         if self.rect.bottom > ALTURA:
             self.rect.bottom = ALTURA
+        if self.rect.left < 0:
+            self.rect.left = 0
+        if self.rect.right > LARGURA:
+            self.rect.right = LARGURA
 
     def atirar(self):
         agora = pygame.time.get_ticks()
@@ -53,7 +77,7 @@ class Jogador(pygame.sprite.Sprite):
             game_sprites.add(tiro)
             tiros.add(tiro)
 
-class Boss(pygame.sprite.Sprite):
+class Chefe(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.Surface((50, 40))
@@ -62,7 +86,8 @@ class Boss(pygame.sprite.Sprite):
         self.rect.centery = ALTURA / 2
         self.rect.right = LARGURA - 10
         self.veloc_y = 7
-        self.tiro_intervalo = 800
+        self.vida = 100
+        self.tiro_intervalo = 500
         self.ultimo_tiro = pygame.time.get_ticks()
 
     def update(self):
@@ -112,9 +137,11 @@ game_sprites = pygame.sprite.Group()
 tiros = pygame.sprite.Group()
 tirosinimigo = pygame.sprite.Group()
 jogador = Jogador()
-boss = Boss()
+chefe = Chefe()
+chefes = pygame.sprite.Group()
 game_sprites.add(jogador)
-game_sprites.add(boss)
+chefes.add(chefe)
+game_sprites.add(chefe)
 
 # Game Loop
 rodando = True
@@ -130,12 +157,25 @@ while rodando:
             
     # Update
     game_sprites.update()
+    # se um tiro acerta o inimigo
+    hits = pygame.sprite.groupcollide(tiros, chefes, True, False)
+    for hit in hits:
+        chefe.vida -= 10
+        if chefe.vida <= 0:
+            rodando = False
+
+    # se um tiro inimigo acerta o jogador
+    hits2 = pygame.sprite.spritecollide(jogador, tirosinimigo, True)
+    for hit in hits2:
+        jogador.vidas -= 1
+        if jogador.vidas <= 0:
+            rodando = False
+            
     # Render / Draw
     tela.fill(PRETO)
     game_sprites.draw(tela)
+    vida_chefe(tela, 5, 5, chefe.vida)
     # flip display, apos renderizar itens
     pygame.display.flip()
 
 pygame.quit()
-    
-
